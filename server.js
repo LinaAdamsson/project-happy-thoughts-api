@@ -18,7 +18,83 @@ app.use(express.json());
 
 // Start defining your routes here
 app.get("/", (req, res) => {
-  res.send("Hello Technigo!");
+  res.send("Hi!");
+});
+
+const { Schema } = mongoose;
+const HappyThoughtsSchema = new Schema({
+  message: {
+    type: String,
+    required: true,
+    minlength: 5,
+    maxlength: 140
+  },
+  hearts: {
+    type: Number,
+    default: 0
+
+  },
+  createdAt: {
+    type: Date,
+    default: new Date()
+  },
+});
+
+const HappyThoughts = mongoose.model("HappyThoughts", HappyThoughtsSchema);
+
+app.get("/thoughts", async (req, res) => {
+  try {
+    const thoughts = await HappyThoughts.find().sort({ createdAt: -1 }).limit(20);
+    res.status(200).json({
+      success: true,
+      response: thoughts,
+      message: "Success"
+    });
+  } catch (e) {
+    res.status(400).json({
+      success: false,
+      response: e,
+      message: "Error"
+    });
+  }
+});
+
+
+app.post("/thoughts", async (req, res) => {
+  const { message } = req.body;
+  try {
+    const newThoughts = await new HappyThoughts({ message }).save();
+    res.status(201).json({
+      success: true,
+      response: newThoughts,
+      message: "Success"
+    });
+  } catch (e) {
+    res.status(400).json({
+      success: false,
+      response: e,
+      message: "Error"
+    });
+  }
+});
+
+app.post("/thoughts/:thoughtId/like", async (req, res) => {
+  const { thoughtId } = req.params;
+  try {
+    const updatedThought = await HappyThoughts.findOneAndUpdate({ "_id": thoughtId }, { $inc: { "hearts": 1 } });
+    res.status(201).json({
+      success: true,
+      response: updatedThought,
+      message: "Success"
+    });
+  }
+  catch (e) {
+    res.status(400).json({
+      success: false,
+      response: e,
+      message: "Error"
+    });
+  }
 });
 
 // Start the server
